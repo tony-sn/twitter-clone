@@ -1,62 +1,90 @@
-import { useCallback, useReducer } from "react";
+import { signIn } from "next-auth/react";
+import { useCallback, useState } from "react";
+import { toast } from "react-hot-toast";
+
 import useLoginModal from "@/hooks/useLoginModal";
-import Input from "@/components/Input";
-import Modal from "@/components/Modal";
+import useRegisterModal from "@/hooks/useRegisterModal";
 
-function reducer(state, action) {
-  console.log("reducer", { state, action });
+import Input from "../Input";
+import Modal from "../Modal";
 
-  switch (action.type) {
-    case "SUBMITTING":
-      return { isLoading: false, [action.name]: action.value };
-    case "SUBMITTED":
-      return { isLoading: true };
-  }
-
-  throw new Error("Unhandled action type" + action.type)
-}
-
-function LoginModal() {
+const LoginModal = () => {
   const loginModal = useLoginModal();
-  const { isOpen, isClose, onClose } = loginModal;
+  const registerModal = useRegisterModal();
 
-  const [state, dispatch] = useReducer(reducer, {
-    email: "",
-    password: "",
-    isLoading: false,
-  })
-
-  const handleInput = (e) => {
-    const { name, value } = e.target;
-    dispatch({ type: "SUBMITTING", name, value })
-  }
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   const onSubmit = useCallback(async () => {
-    dispatch({ type: "SUBMITTING" })
     try {
-      // await loginModal.onSubmit(state.email, state.password)
-      onClose()
-    } catch (error) {
-      console.log("error", error)
-    } finally {
-      dispatch({ type: "SUBMITTED" })
-    }
+      setIsLoading(true);
 
-  }, [loginModal])
+      await signIn('credentials', {
+        email,
+        password,
+      });
+
+      toast.success('Logged in');
+
+      loginModal.onClose();
+    } catch (error) {
+      toast.error('Something went wrong');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [email, password, loginModal]);
+
+  const onToggle = useCallback(() => {
+    loginModal.onClose();
+    registerModal.onOpen();
+  }, [loginModal, registerModal])
 
   const bodyContent = (
-    <div className='flex flex-col gap-4'>
-      <Input placeholder='email@mail.com' onChange={handleInput} value={state.email} disabled={state.isLoading} />
+    <div className="flex flex-col gap-4">
+      <Input
+        placeholder="Email"
+        onChange={(e) => setEmail(e.target.value)}
+        value={email}
+        disabled={isLoading}
+      />
+      <Input
+        placeholder="Password"
+        type="password"
+        onChange={(e) => setPassword(e.target.value)}
+        value={password}
+        disabled={isLoading}
+      />
+    </div>
+  )
 
-      <Input placeholder='Enter your password' onChange={handleInput} value={state.password} disabled={state.isLoading} />
+  const footerContent = (
+    <div className="text-neutral-400 text-center mt-4">
+      <p>First time using Twitter?
+        <span
+          onClick={onToggle}
+          className="
+            text-white 
+            cursor-pointer 
+            hover:underline
+          "
+        > Create an account</span>
+      </p>
     </div>
   )
 
   return (
-    <div>
-      <Modal disabled={state.isLoading} isOpen={isOpen} title="Login" actionLabel="Sign in" onClose={onClose} onSubmit={onSubmit} body={bodyContent} />
-    </div>
-  )
+    <Modal
+      disabled={isLoading}
+      isOpen={loginModal.isOpen}
+      title="Login"
+      actionLabel="Sign in"
+      onClose={loginModal.onClose}
+      onSubmit={onSubmit}
+      body={bodyContent}
+      footer={footerContent}
+    />
+  );
 }
 
 export default LoginModal;
