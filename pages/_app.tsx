@@ -15,7 +15,6 @@ export default function App({ Component, pageProps }: AppProps) {
       <Toaster />
       <RegisterModal />
       <LoginModal />
-      {/* <Modal actionLabel='Submit' title='Test Modal' /> */}
       <Layout>
         <Component {...pageProps} />
       </Layout>
