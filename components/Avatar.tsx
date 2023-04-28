@@ -25,8 +25,6 @@ const Avatar: React.FC<AvatarProps> = ({
 
     router.push(url);
 
-
-
   }, [router, userId])
 
   return (
